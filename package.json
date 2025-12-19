@@ -1,0 +1,14 @@
+{
+    "name": "agent-perry",
+    "private": true,
+    "scripts": {
+      "build": "turbo run build",
+      "dev": "turbo run dev",
+      "lint": "turbo run lint"
+    },
+    "devDependencies": {
+      "turbo": "latest"
+    },
+    "workspaces": ["apps/*", "packages/*"],
+    "packageManager": "npm@10.8.3"
+  }
