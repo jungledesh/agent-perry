@@ -1,2 +1,2 @@
 # agent-perry
-Simple Agent to read inbound mails 
+AI Agent to read inbound lead emails
