@@ -1,23 +1,33 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import {
+  Controller,
+  Post,
+  Body,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
+import { createZodDto, ZodValidationPipe } from 'nestjs-zod';
 import { WebhookSchema } from './webhook.dto';
+
+// Create DTO class for type safety and pipe integration
+export class WebhookDto extends createZodDto(WebhookSchema) {}
 
 @Controller('webhooks')
 export class WebhooksController {
+  private readonly logger = new Logger(WebhooksController.name);
+
   @Post()
   async handleWebhook(
-    @Body() body: unknown,
-    @Res() res: Response
+    @Body(ZodValidationPipe) body: WebhookDto, // Auto-validates with pipe
   ): Promise<void> {
-    // Validate with Zod
-    const validatedPayload = WebhookSchema.parse(body);  // Throws if invalid
+    try {
+      this.logger.debug('Validated payload:', body);
 
-    console.log('Validated payload:', validatedPayload);
+      // TODO: Offload to Temporal/queue for async processing (store, extract, etc.)
 
-    // Now use safely: validatedPayload.event_type, validatedPayload.message.from, etc.
-
-    // TODO: Process (store, Temporal, etc.)
-
-    res.status(200).send();
+      // Quick ACK - Nest handles the 200 response implicitly for void returns
+    } catch (error) {
+      this.logger.error('Webhook processing error:', error);
+      throw new BadRequestException('Invalid webhook payload'); // Custom error
+    }
   }
 }
