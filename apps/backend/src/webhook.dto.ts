@@ -17,7 +17,7 @@ export const WebhookSchema = z.object({
     extracted_html: z.string().optional(),
     extracted_text: z.string().optional(),
     html: z.string().optional(),
-    from: z.string(), 
+    from: z.string(),
     from_: z.string(),
     headers: z.record(z.string(), z.unknown()).optional(),
     inbox_id: z.string(),
