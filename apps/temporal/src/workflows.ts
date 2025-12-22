@@ -1,9 +1,7 @@
 import * as activities from "./activities";
 import { LeadExtractSchema } from "./schemas";
 import { proxyActivities, log } from "@temporalio/workflow";
-import { WorkflowError } from "@temporalio/workflow"; // For custom failures
-
-// Define options HERE
+import { WorkflowError } from "@temporalio/workflow";
 const { extractMetadata } = proxyActivities<typeof activities>({
   startToCloseTimeout: "30 seconds",
   retry: {
@@ -22,31 +20,31 @@ export async function processLead({
   emailSubject: string;
 }): Promise<void> {
   try {
-    // Sanitize input (basic; expand for security)
-    if (typeof leadId !== "number" || leadId <= 0)
+    if (typeof leadId !== "number" || leadId <= 0) {
       throw new Error("Invalid lead ID");
+    }
 
-    log.info(`Processing lead ${leadId}`);
+    log.info("Processing lead", { leadId });
 
-    // Activity 1: Extract with LangSmith
     const extracted = await extractMetadata(emailBody, emailSubject);
+    const validated = LeadExtractSchema.parse(extracted);
 
-    // Workflow step: Validate with Zod
-    const validated = LeadExtractSchema.parse(extracted); // Throws if invalid
+    log.info("Lead processed successfully", {
+      leadId,
+      extractedFields: Object.keys(validated).filter(
+        (key) => validated[key as keyof typeof validated] !== null,
+      ),
+    });
 
-    log.info("`Validated data: ", { validated });
-
-    // // Activity 2: Persist in DB
-    // await activities.persistMetadata(leadId, validated);
-
-    // // Activity 3: Trigger comms
-    // await activities.triggerCommunication(leadId);
-
-    // // Activity 4: Update status
-    // await activities.updateStatus(leadId, "processed");
+    return;
   } catch (error) {
-    log.error(`Lead ${leadId} failed: ${error.message}`); // Sanitized logging (no full stack)
-    console.warn(`Alert: Lead ${leadId} failed - ${error.message}`); // Dummy alert
-    throw new WorkflowError(`Workflow failed for lead ${leadId}`); // Custom failure for Temporal UI/monitoring
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log.error("Lead processing failed", {
+      leadId,
+      error: errorMessage,
+    });
+    throw new WorkflowError(
+      `Workflow failed for lead ${leadId}: ${errorMessage}`,
+    );
   }
 }

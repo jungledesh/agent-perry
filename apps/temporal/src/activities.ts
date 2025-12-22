@@ -1,5 +1,6 @@
 import { config } from "dotenv";
-config(); // Load .env early
+
+config();
 
 import { pull } from "langchain/hub";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
@@ -11,7 +12,6 @@ import { Logger } from "@nestjs/common";
 type LeadExtract = z.infer<typeof LeadExtractSchema>;
 const logger = new Logger("ExtractActivity");
 
-// In-memory cache for the prompt (simple object; survives process lifetime)
 let cachedPrompt: ChatPromptTemplate | null = null;
 
 export async function extractMetadata(
@@ -31,51 +31,14 @@ export async function extractMetadata(
     throw new Error(errMsg);
   }
 
-  // Fetch prompt only if not cached
   if (!cachedPrompt) {
     try {
-      // Use pull() instead of client._pullPrompt()
-      // This automatically returns a PromptTemplate or ChatPromptTemplate instance
       cachedPrompt = await pull<ChatPromptTemplate>(promptName);
-
-      logger.log("Prompt fetched from LangChain Hub", {
-        commit: cachedPrompt.metadata?.lc_hub_commit_hash,
-      });
     } catch (err) {
-      logger.error(`Failed to fetch prompt: ${(err as Error).message}`);
-      throw new Error(`Failed to fetch prompt: ${(err as Error).message}`);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      logger.error("Failed to fetch prompt", { error: errorMessage });
+      throw new Error(`Failed to fetch prompt: ${errorMessage}`);
     }
-  }
-
-  // --- NEW DEBUGGING BLOCK START ---
-  // Format the prompt with inputs to inspect what the model will see
-  try {
-    const formattedMessages = await cachedPrompt.invoke({
-      subject: emailSubject,
-      text: emailBody,
-    });
-
-    // Log the full formatted messages (system + human)
-    logger.log("Formatted prompt messages:", {
-      messages: formattedMessages.messages.map((msg) => {
-        const msgType = msg.constructor.name
-          .replace("Message", "")
-          .toLowerCase();
-        const msgContent =
-          typeof msg.content === "string"
-            ? msg.content
-            : JSON.stringify(msg.content);
-        return {
-          type: msgType,
-          content: msgContent,
-        };
-      }),
-    });
-  } catch (err) {
-    logger.error(
-      `Failed to format prompt for debugging: ${(err as Error).message}`,
-    );
-    // Continue anyway, but note the error
   }
 
   try {
@@ -90,21 +53,28 @@ export async function extractMetadata(
       subject: emailSubject,
       text: emailBody,
     });
-    logger.log(`this is result: `, result);
 
-    // Parse JSON from the result content
     const content =
       typeof result.content === "string"
         ? result.content
         : JSON.stringify(result.content);
     const parsed: unknown = JSON.parse(content);
     const validated = LeadExtractSchema.parse(parsed);
-    logger.log(`Extraction successful for input length ${emailBody.length}`);
 
-    // 4. Final validation
+    logger.log("Extraction successful", {
+      inputLength: emailBody.length,
+      extractedFields: Object.keys(validated).filter(
+        (key) => validated[key as keyof typeof validated] !== null,
+      ),
+    });
+
     return validated;
   } catch (err) {
-    logger.error(`Extraction failed: ${(err as Error).message}`);
-    throw new Error(`Extraction failed: ${(err as Error).message}`);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    logger.error("Extraction failed", {
+      error: errorMessage,
+      inputLength: emailBody.length,
+    });
+    throw new Error(`Extraction failed: ${errorMessage}`);
   }
 }
