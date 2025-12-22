@@ -9,6 +9,7 @@ import { createZodDto, ZodValidationPipe } from 'nestjs-zod';
 import { LeadsService } from './leads.service';
 import { WebhookSchema } from './webhook.dto';
 import type { Leads } from '@prisma/client';
+import { TemporalService } from './temporal/temporal.service';
 
 // Create DTO class for type safety and pipe integration
 export class WebhookDto extends createZodDto(WebhookSchema) {}
@@ -17,7 +18,10 @@ export class WebhookDto extends createZodDto(WebhookSchema) {}
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
-  constructor(private leadsService: LeadsService) {} // Inject the service
+  constructor(
+    private leadsService: LeadsService,
+    private temporalService: TemporalService, // Inject TemporalService
+  ) {}
 
   @Post()
   async handleWebhook(
@@ -29,7 +33,35 @@ export class WebhooksController {
 
       this.logger.debug(`Created lead with id: ${createdLead.id}`);
 
-      // TODO: Offload to Temporal/queue for async processing (store, extract, etc.)
+      // Normalize text for extraction (minimal + deterministic)
+      const message = body.message;
+
+      const normalizedText = (
+        message.text ||
+        message.extracted_text ||
+        ''
+      ).trim();
+
+      if (!normalizedText) {
+        this.logger.warn(`Empty email body for lead id: ${createdLead.id}`);
+        return;
+      }
+
+      const extractionPayload = {
+        subject: message.subject,
+        text: normalizedText,
+        leadId: createdLead.id, // useful later for Temporal correlation
+      };
+
+      this.logger.debug('Prepared extraction payload:', extractionPayload);
+
+      // Start Temporal workflow
+      const workflowId =
+        await this.temporalService.startProcessLead(extractionPayload);
+
+      this.logger.debug(
+        `Started Temporal workflow ${workflowId} for lead ${createdLead.id}`,
+      );
 
       // Quick ACK - Nest handles the 200 response implicitly for void returns
     } catch (error) {
