@@ -482,6 +482,8 @@ Covering:
 - Call back requests and time connection requests
 - Lead activity summaries and opportunity notifications
 
+For detailed sample email cases showing how different formats are normalized and extracted, see [Sample Lead Email Cases](./docs/sample-lead-emails.md).
+
 ### Format Variability Handling
 
 Different lead providers send emails in completely different formats—HTML, plain text, rich text, with varying structures and styles. Our system handles this variability through a **normalization-first approach**:
