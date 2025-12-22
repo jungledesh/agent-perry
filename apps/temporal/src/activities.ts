@@ -78,3 +78,27 @@ export async function extractMetadata(
     throw new Error(`Extraction failed: ${errorMessage}`);
   }
 }
+
+export async function persistMetadata(
+  leadId: number,
+  _metadata: LeadExtract,
+): Promise<void> {
+  logger.log("Persisting metadata", { leadId });
+  await Promise.resolve();
+  // TODO: Implement database persistence
+}
+
+export async function triggerCommunication(leadId: number): Promise<void> {
+  logger.log("Triggering communication", { leadId });
+  await Promise.resolve();
+  // TODO: Implement communication trigger
+}
+
+export async function updateStatus(
+  leadId: number,
+  status: string,
+): Promise<void> {
+  logger.log("Updating status", { leadId, status });
+  await Promise.resolve();
+  // TODO: Implement status update
+}
