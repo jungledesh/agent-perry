@@ -631,6 +631,27 @@ Campaign: Angi Leads
 If you have questions, contact Angi Customer Care.
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Booking Request: Unclog Drain in Beverly Hills",
+  "text": "Angi Leads\n\nNew Booking Alert\n\nCustomer Name: Michael Johnson\nPhone Number: (406) 555-0120\nEmail: michael.johnson@example.com\nAddress: 265 N. Robertson Blvd, Beverly Hills, CA 90211\n\nJob Type: Unclog Drain\nCategory: Plumbing/HVAC\nMessage: The drain in my kitchen sink is clogged. Help!\nRequested Time: July 10, 2025, 3:00 PM\n\nAccept or dismiss this booking in your Angi Pro dashboard: [Link to Lead]\n\nCampaign: Angi Leads\n\nIf you have questions, contact Angi Customer Care."
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Michael Johnson",
+  "customer_number": "(406) 555-0120",
+  "customer_address": "265 N. Robertson Blvd, Beverly Hills, CA 90211",
+  "service_requested": "Unclog Drain",
+  "provider": "Angi"
+}
+```
+
+**Note**: This example demonstrates successful extraction of all fields including name, phone, address, and service type. The structured format makes extraction straightforward, but our system handles both structured and unstructured formats.
+
 ---
 
 ### Messages
@@ -657,6 +678,27 @@ Best,
 Angi Leads Team
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Message from a Homeowner on Angi",
+  "text": "Hi [Business Name],\n\nA homeowner has sent you a message regarding an existing lead:\n\nSender: [Homeowner Name]\nMessage: \"Hi, I'm interested in your services and would like a quote…\"\n\nYou can respond directly via the Angi for Pros app or dashboard.\n\nReply: https://office.angi.com/inbox\n\nBest,\nAngi Leads Team"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "[Homeowner Name]",
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Angi"
+}
+```
+
+**Note**: This example shows a template format. The LLM extracts the sender name from the message structure, demonstrating its ability to parse structured templates.
+
 #### Example 2: Direct Message
 
 **From**: `Angi messages@email.angi.com`  
@@ -669,6 +711,27 @@ From: Sarah L. Message: "Hi, I saw your reviews and was wondering if you do free
 [ Reply to Sarah ] (Button)
 Note: Keeping your response time under 1 hour improves your profile strength.
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New message from [Customer Name] regarding [Service]",
+  "text": "You have a new message on Angi\nFrom: Sarah L. Message: \"Hi, I saw your reviews and was wondering if you do free estimates for roof inspections? We have a small leak in the garage.\"\n[ Reply to Sarah ] (Button)\nNote: Keeping your response time under 1 hour improves your profile strength."
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Sarah L.",
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": "Roof Inspection",
+  "provider": "Angi"
+}
+```
+
+**Note**: Even with template placeholders in the subject line, the LLM successfully extracts the customer name and service from the message body.
 
 ---
 
@@ -697,6 +760,27 @@ Thank you,
 Angi Leads Team
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "Homeowner Requested a Time to Connect",
+  "text": "Hello [Business Name],\n\nA homeowner has not only submitted a lead but also requested a time to discuss the job:\n\n• Homeowner: [Name]\n• Requested Time: [Date / Time]\n• Project Type: [Type of work]\n\nPlease follow up promptly with the homeowner to confirm this appointment.\n\nView details: https://office.angi.com\n\nThank you,\nAngi Leads Team"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": "[Type of work]",
+  "provider": "Angi"
+}
+```
+
+**Note**: This example shows a template format with placeholders. The LLM extracts what's available (provider and service type) and handles missing information gracefully.
+
 ---
 
 ### Opportunities
@@ -714,6 +798,27 @@ Tile Installation - [Customer Name] - 8 miles away
 Backsplash Repair - [Customer Name] - 3 miles away
 [ View All Opportunities ] (Button)
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "[3] New opportunities available in your area",
+  "text": "Don't miss out on these jobs:\nKitchen Remodel - [Customer Name] - 5 miles away\nTile Installation - [Customer Name] - 8 miles away\nBacksplash Repair - [Customer Name] - 3 miles away\n[ View All Opportunities ] (Button)"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": "Kitchen Remodel, Tile Installation, Backsplash Repair",
+  "provider": "Angi"
+}
+```
+
+**Note**: This example contains multiple opportunities in a single email. The LLM extracts all service types mentioned, demonstrating its ability to handle multi-item emails.
 
 ---
 
