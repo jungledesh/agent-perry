@@ -3,14 +3,18 @@ import { LeadExtractSchema } from "./schemas";
 import { proxyActivities, log } from "@temporalio/workflow";
 import { WorkflowError } from "@temporalio/workflow";
 
-const { extractMetadata, persistMetadata, triggerCommunication, updateStatus } =
-  proxyActivities<typeof activities>({
-    startToCloseTimeout: "30 seconds",
-    retry: {
-      maximumAttempts: 3,
-      initialInterval: "1s",
-    },
-  });
+const {
+  extractMetadata,
+  persistExtractedData,
+  triggerCommunication,
+  updateStatus,
+} = proxyActivities<typeof activities>({
+  startToCloseTimeout: "30 seconds",
+  retry: {
+    maximumAttempts: 3,
+    initialInterval: "1s",
+  },
+});
 
 export async function processLead({
   leadId,
@@ -37,13 +41,13 @@ export async function processLead({
       console.warn(`[ALERT] Lead ${leadId}: Customer phone number is missing`);
     }
 
-    // Activity 2: Persist in DB
-    await persistMetadata(leadId, validated);
+    // Activity 2: Persist extracted data in DB
+    await persistExtractedData(leadId, validated);
 
-    // Activity 3: Trigger comms
+    // Activity 3: Trigger communication
     await triggerCommunication(leadId);
 
-    // Activity 4: Update status
+    // Activity 4: Update status to processed
     await updateStatus(leadId, "processed");
 
     log.info("Lead processed successfully", {
@@ -58,6 +62,20 @@ export async function processLead({
       leadId,
       error: errorMessage,
     });
+
+    // Update status to failed before throwing
+    try {
+      await updateStatus(leadId, "failed");
+    } catch (statusError) {
+      log.error("Failed to update status to failed", {
+        leadId,
+        error:
+          statusError instanceof Error
+            ? statusError.message
+            : String(statusError),
+      });
+    }
+
     throw new WorkflowError(
       `Workflow failed for lead ${leadId}: ${errorMessage}`,
     );
