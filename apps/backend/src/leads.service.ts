@@ -46,7 +46,7 @@ export class LeadsService {
         customer_address: null,
         provider: provider,
         provider_lead_id:
-          message.message_id || payload.event_id || 'pending-action',
+          message.message_id || payload.event_id || 'not provided',
         org_id: message.organization_id ?? 'default',
         chat_channel: 'email',
         lead_raw_data: essentialRawData as unknown as Prisma.InputJsonValue,
@@ -106,6 +106,68 @@ export class LeadsService {
         `Failed to update extracted data for lead ${leadId}`,
         err,
       );
+      throw err;
+    }
+  }
+
+  async getLeads(
+    orgId?: string,
+    provider?: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ leads: Leads[]; total: number; page: number; limit: number }> {
+    try {
+      const where: Prisma.LeadsWhereInput = {};
+      if (orgId) {
+        where.org_id = orgId;
+      }
+      if (provider) {
+        where.provider = provider;
+      }
+
+      const skip = (page - 1) * limit;
+
+      const [leads, total] = await Promise.all([
+        this.prisma.leads.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.leads.count({ where }),
+      ]);
+
+      this.logger.debug(
+        `Fetched ${leads.length} leads (page ${page}, total ${total})${orgId ? ` for org ${orgId}` : ''}${provider ? ` for provider ${provider}` : ''}`,
+      );
+
+      return { leads, total, page, limit };
+    } catch (err) {
+      this.logger.error('Failed to fetch leads', err);
+      throw err;
+    }
+  }
+
+  async getAllProviders(): Promise<string[]> {
+    try {
+      const providers = await this.prisma.leads.findMany({
+        select: { provider: true },
+        distinct: ['provider'],
+      });
+      return providers.map((p) => p.provider);
+    } catch (err) {
+      this.logger.error('Failed to fetch providers', err);
+      throw err;
+    }
+  }
+
+  async getLeadById(leadId: number): Promise<Leads | null> {
+    try {
+      return await this.prisma.leads.findUnique({
+        where: { id: leadId },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to fetch lead ${leadId}`, err);
       throw err;
     }
   }

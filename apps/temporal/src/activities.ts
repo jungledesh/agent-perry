@@ -127,6 +127,22 @@ export async function persistExtractedData(
       data: updateData,
     });
 
+    // Notify backend of update for WebSocket emission
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    try {
+      await fetch(`${backendUrl}/leads/notify-update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId }),
+      });
+    } catch (notifyErr) {
+      // Don't fail the activity if notification fails
+      logger.warn("Failed to notify backend of lead update", {
+        leadId,
+        error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+      });
+    }
+
     logger.log("Extracted data persisted successfully", { leadId });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -224,6 +240,22 @@ export async function updateStatus(
       where: { id: leadId },
       data: { status },
     });
+
+    // Notify backend of update for WebSocket emission
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    try {
+      await fetch(`${backendUrl}/leads/notify-update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId }),
+      });
+    } catch (notifyErr) {
+      // Don't fail the activity if notification fails
+      logger.warn("Failed to notify backend of lead update", {
+        leadId,
+        error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+      });
+    }
 
     logger.log("Status updated successfully", { leadId, status });
   } catch (err) {

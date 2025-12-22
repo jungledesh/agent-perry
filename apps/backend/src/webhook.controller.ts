@@ -10,6 +10,7 @@ import { LeadsService } from './leads.service';
 import { WebhookSchema } from './webhook.dto';
 import type { Leads } from '@prisma/client';
 import { TemporalService } from './temporal/temporal.service';
+import { LeadsGateway } from './leads.gateway';
 
 // Create DTO class for type safety and pipe integration
 export class WebhookDto extends createZodDto(WebhookSchema) {}
@@ -21,6 +22,7 @@ export class WebhooksController {
   constructor(
     private leadsService: LeadsService,
     private temporalService: TemporalService, // Inject TemporalService
+    private leadsGateway: LeadsGateway, // Inject WebSocket gateway
   ) {}
 
   @Post()
@@ -63,6 +65,9 @@ export class WebhooksController {
       this.logger.debug(
         `Started Temporal workflow ${workflowId} for lead ${createdLead.id}`,
       );
+
+      // Emit WebSocket event for new lead
+      this.leadsGateway.emitLeadCreated(createdLead);
 
       // Quick ACK - Nest handles the 200 response implicitly for void returns
     } catch (error) {
