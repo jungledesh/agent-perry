@@ -17,6 +17,7 @@ model Leads {
   status           String   @default("new")
   lead_raw_data    Json
   chat_channel     String?  @default("email")
+  service_requested String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
