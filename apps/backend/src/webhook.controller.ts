@@ -50,10 +50,8 @@ export class WebhooksController {
       const extractionPayload = {
         subject: message.subject,
         text: normalizedText,
-        leadId: createdLead.id, // useful later for Temporal correlation
+        leadId: createdLead.id,
       };
-
-      this.logger.debug('Prepared extraction payload:', extractionPayload);
 
       // Start Temporal workflow
       const workflowId =

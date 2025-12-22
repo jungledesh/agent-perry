@@ -2,13 +2,15 @@ import * as activities from "./activities";
 import { LeadExtractSchema } from "./schemas";
 import { proxyActivities, log } from "@temporalio/workflow";
 import { WorkflowError } from "@temporalio/workflow";
-const { extractMetadata } = proxyActivities<typeof activities>({
-  startToCloseTimeout: "30 seconds",
-  retry: {
-    maximumAttempts: 3,
-    initialInterval: "1s", // Temporal uses strings or ms
-  },
-});
+
+const { extractMetadata, persistMetadata, triggerCommunication, updateStatus } =
+  proxyActivities<typeof activities>({
+    startToCloseTimeout: "30 seconds",
+    retry: {
+      maximumAttempts: 3,
+      initialInterval: "1s",
+    },
+  });
 
 export async function processLead({
   leadId,
@@ -29,14 +31,27 @@ export async function processLead({
     const extracted = await extractMetadata(emailBody, emailSubject);
     const validated = LeadExtractSchema.parse(extracted);
 
+    // Alert if customer phone number is missing
+    if (!validated.customer_number) {
+      log.warn("Alert: Missing customer phone number", { leadId });
+      console.warn(`[ALERT] Lead ${leadId}: Customer phone number is missing`);
+    }
+
+    // Activity 2: Persist in DB
+    await persistMetadata(leadId, validated);
+
+    // Activity 3: Trigger comms
+    await triggerCommunication(leadId);
+
+    // Activity 4: Update status
+    await updateStatus(leadId, "processed");
+
     log.info("Lead processed successfully", {
       leadId,
       extractedFields: Object.keys(validated).filter(
         (key) => validated[key as keyof typeof validated] !== null,
       ),
     });
-
-    return;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log.error("Lead processing failed", {
