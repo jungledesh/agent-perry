@@ -57,6 +57,9 @@ export class WebhooksController {
       const workflowId =
         await this.temporalService.startProcessLead(extractionPayload);
 
+      // Store workflow ID for correlation
+      await this.leadsService.updateWorkflowId(createdLead.id, workflowId);
+
       this.logger.debug(
         `Started Temporal workflow ${workflowId} for lead ${createdLead.id}`,
       );

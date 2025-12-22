@@ -18,6 +18,8 @@ model Leads {
   lead_raw_data    Json
   chat_channel     String?  @default("email")
   service_requested String?
+  workflow_id      String?
+  lead_metadata    Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
