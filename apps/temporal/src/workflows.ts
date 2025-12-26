@@ -1,5 +1,4 @@
 import * as activities from "./activities";
-import { LeadExtractSchema } from "./schemas";
 import { proxyActivities, log } from "@temporalio/workflow";
 import { WorkflowError } from "@temporalio/workflow";
 
@@ -32,8 +31,8 @@ export async function processLead({
 
     log.info("Processing lead", { leadId });
 
-    const extracted = await extractMetadata(emailBody, emailSubject);
-    const validated = LeadExtractSchema.parse(extracted);
+    // extractMetadata already validates with LeadExtractSchema
+    const validated = await extractMetadata(emailBody, emailSubject);
 
     // Alert if customer phone number is missing
     if (!validated.customer_number) {

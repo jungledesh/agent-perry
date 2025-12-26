@@ -68,7 +68,24 @@ export async function extractMetadata(
       typeof result.content === "string"
         ? result.content
         : JSON.stringify(result.content);
-    const parsed: unknown = JSON.parse(content);
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseError) {
+      const parseErrorMessage =
+        parseError instanceof Error
+          ? parseError.message
+          : "Unknown parse error";
+      logger.error("Failed to parse LLM response as JSON", {
+        error: parseErrorMessage,
+        content: content.substring(0, 200), // Log first 200 chars for debugging
+      });
+      throw new Error(
+        `Failed to parse LLM response as JSON: ${parseErrorMessage}`,
+      );
+    }
+
     const validated = LeadExtractSchema.parse(parsed);
 
     logger.log("Extraction successful", {
@@ -128,18 +145,19 @@ export async function persistExtractedData(
     });
 
     // Notify backend of update for WebSocket emission
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
     try {
       await fetch(`${backendUrl}/leads/notify-update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadId }),
       });
     } catch (notifyErr) {
       // Don't fail the activity if notification fails
       logger.warn("Failed to notify backend of lead update", {
         leadId,
-        error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        error:
+          notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
       });
     }
 
@@ -242,18 +260,19 @@ export async function updateStatus(
     });
 
     // Notify backend of update for WebSocket emission
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
     try {
       await fetch(`${backendUrl}/leads/notify-update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadId }),
       });
     } catch (notifyErr) {
       // Don't fail the activity if notification fails
       logger.warn("Failed to notify backend of lead update", {
         leadId,
-        error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        error:
+          notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
       });
     }
 
