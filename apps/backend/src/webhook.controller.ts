@@ -46,6 +46,9 @@ export class WebhooksController {
 
       if (!normalizedText) {
         this.logger.warn(`Empty email body for lead id: ${createdLead.id}`);
+        // Still emit WebSocket event so frontend knows about the lead
+        // even though we can't extract data from it
+        this.leadsGateway.emitLeadCreated(createdLead);
         return;
       }
 
