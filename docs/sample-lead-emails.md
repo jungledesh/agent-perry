@@ -142,6 +142,27 @@ Details: > Customer noted that the unit is making a loud buzzing sound and not b
 [ Manage Booking ] (Button)
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New booking: AC Repair on 12/22/2025",
+  "text": "New appointment booked\nCustomer: Robert Johnson\nService: AC Repair\nAddress: 742 Evergreen Terrace, Springfield, IL 62704\nPhone: (555) 987-6543\nDate/Time: Monday, Dec 22, 2025 @ 1:00 PM – 3:00 PM\nDetails: > Customer noted that the unit is making a loud buzzing sound and not blowing cold air.\n[ Manage Booking ] (Button)"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Robert Johnson",
+  "customer_number": "(555) 987-6543",
+  "customer_address": "742 Evergreen Terrace, Springfield, IL 62704",
+  "service_requested": "AC Repair",
+  "provider": "Google LSA"
+}
+```
+
+**Note**: This example demonstrates successful extraction of all available fields including customer name, phone number, address, and service type. The structured format makes extraction straightforward, and our system handles both structured and unstructured email formats.
+
 #### Example 3: Generic Booking Notification
 
 **From**: `Google Local Services Ads`  
