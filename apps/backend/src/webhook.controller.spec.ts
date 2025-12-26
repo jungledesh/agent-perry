@@ -131,7 +131,7 @@ describe('WebhooksController', () => {
       });
     });
 
-    it('should return early if normalized text is empty', async () => {
+    it('should return early if normalized text is empty but still emit WebSocket event', async () => {
       const payloadWithEmptyText: WebhookDto = {
         ...mockWebhookPayload,
         message: {
@@ -150,6 +150,8 @@ describe('WebhooksController', () => {
       );
       expect(temporalService.startProcessLead).not.toHaveBeenCalled();
       expect(leadsService.updateWorkflowId).not.toHaveBeenCalled();
+      // Should still emit WebSocket event so frontend knows about the lead
+      expect(leadsGateway.emitLeadCreated).toHaveBeenCalledWith(mockLead);
     });
 
     it('should trim normalized text', async () => {
