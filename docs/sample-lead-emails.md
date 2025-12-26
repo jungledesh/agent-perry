@@ -178,6 +178,12 @@ Name: [Customer Name or Potential Customer]
 Location: [City]
 Service type: [e.g., Plumbing Repair]
 Appointment time: [Date and Time]
+
+To connect with this customer:
+Reply to this email  Or  Respond to this lead in the app
+
+Log in to confirm the booking and view full details.
+
 ```
 
 **Normalized Input Sent to LLM**:
@@ -188,17 +194,19 @@ Appointment time: [Date and Time]
 }
 ```
 
-**Note**: This example shows a template format. Even with placeholders like `[Date]` and `[Customer Name]`, our normalization extracts the text content and sends it to the LLM. The LLM handles partial information gracefully, extracting what's available.
-
-Message (if provided): [Customer's note, or "No message provided"]
-
-To connect with this customer:
-Reply to this email  Or  Respond to this lead in the app
-
-Log in to confirm the booking and view full details.
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Google LSA"
+}
 ```
 
----
+**Note**: This example shows a template format. Even with placeholders like `[Date]` and `[Customer Name]`, our normalization extracts the text content and sends it to the LLM. The LLM handles partial information gracefully, extracting what's available. In this case, only the provider can be identified since all other fields contain template placeholders rather than actual data.
+
 
 ### Phone Leads
 
@@ -224,6 +232,27 @@ Thank you,
 Google Local Services Ads Team
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Phone Lead from Google Local Services Ads",
+  "text": "New Phone Lead Received!\n\nYou have a new phone lead from your Local Services Ad.\n\n📞 Lead Type: Phone Call\n📍 Location: Los Angeles, CA\nDate & Time: 12/20/2025 10:15 AM\n\nThe potential customer called your Google Local Services Ad number.\nPlease check your Google Local Services Ads inbox or app for more details.\n\nThank you,\nGoogle Local Services Ads Team"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Google LSA"
+}
+```
+
+**Note**: Phone leads often don't contain customer contact information in the email body. The phone number and customer details are typically available in the Google Local Services Ads dashboard or app, which is why they're not extracted from the email itself.
+
 #### Example 2: Missed Call Notification
 
 **From**: `Google Local Services Ads`  
@@ -245,6 +274,27 @@ Reply to this email  Or  Respond to this lead in the app
 Log in to view the customer's phone number and call them back.
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New event",
+  "text": "You missed a call from a potential customer.\n\nYou received this call on [Date] at [Time].\n\nName: Potential Customer\nLocation: [City or Unknown]\nService type: [e.g., Roofing]\n\nTo connect with this customer:\nReply to this email  Or  Respond to this lead in the app\n\nLog in to view the customer's phone number and call them back."
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": "[e.g., Roofing]",
+  "provider": "Google LSA"
+}
+```
+
+**Note**: This example shows a template format with placeholders. The LLM extracts the service type pattern and provider, but customer details are not available in the email body and must be accessed through the dashboard.
+
 #### Example 3: Detailed Call Lead
 
 **From**: `Google Local Services local-services-noreply@google.com`  
@@ -259,6 +309,27 @@ To see the customer's phone number and listen to the call recording, visit your 
 [ View Lead Details ] (Button)
 Note: This lead was generated from your Local Services Ad.
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New lead from [Your Business Name]",
+  "text": "You received a call from a new lead\nTime of call: Dec 20, 2025, 10:15 AM\nCall duration: 02:45\nTo see the customer's phone number and listen to the call recording, visit your lead inbox.\n[ View Lead Details ] (Button)\nNote: This lead was generated from your Local Services Ad."
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Google LSA"
+}
+```
+
+**Note**: This example provides call metadata (time and duration) but doesn't include customer contact information in the email. The phone number and customer details are available in the lead inbox, which is why they're not extracted from the email body.
 
 ---
 
@@ -286,6 +357,27 @@ Thank you,
 Google Local Services Ads Team
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Message Lead from Google Local Services Ads",
+  "text": "You've received a new message lead via Google Local Services Ads!\n\n📌 Lead Type: Message\n📆 Date & Time: 12/21/2025 15:30\n\nLead Details:\nName: Jane Doe\nMessage: \"Hi, my water heater is leaking from the bottom and I need someone to come look at it today if possible. Please let me know your availability.\"\n\nReply directly by replying to this email, or check the LSA inbox in your Google Local Services Ads dashboard.\n\nThank you,\nGoogle Local Services Ads Team"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Jane Doe",
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": "Water Heater Repair",
+  "provider": "Google LSA"
+}
+```
+
+**Note**: The LLM successfully extracts the customer name and infers the service requested from the message content, even though the service type isn't explicitly stated in a structured field.
+
 #### Example 2: Detailed Message with Contact Info
 
 **From**: `Google Local Services`  
@@ -303,6 +395,27 @@ Reply to this lead: You can reply directly to this email to send a message back 
 [Button: Reply to Customer]
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New message lead from Jane Doe",
+  "text": "You have a new message request\nCustomer Name: Jane Doe\nService: Water Heater Repair\nLocation: Los Angeles, CA 90001\nPhone: (555) 987-6543\nCustomer Message: \"Hi, my water heater is leaking from the bottom and I need someone to come look at it today if possible. Please let me know your availability.\"\nReply to this lead: You can reply directly to this email to send a message back to the customer, or use the Local Services app.\n[Button: Reply to Customer]"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Jane Doe",
+  "customer_number": "(555) 987-6543",
+  "customer_address": "Los Angeles, CA 90001",
+  "service_requested": "Water Heater Repair",
+  "provider": "Google LSA"
+}
+```
+
+**Note**: This example demonstrates successful extraction of all available fields including customer name, phone number, location, and service type. The structured format makes extraction straightforward.
+
 #### Example 3: Message via Google Alias
 
 **From**: `[Customer Name] via Google <[random-alias]@lsa.google.com>`  
@@ -319,6 +432,27 @@ Message: "Hi, my kitchen sink is completely backed up and won't drain. Are you a
 Reply to this email to message the customer back.
 [ Reply to Customer ] (Button)
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New message: Clogged Drain from Jane Smith",
+  "text": "You have a new message request\nCustomer: Jane Smith\nService: Clogged Drain\nZIP Code: 90210\nPhone: (555) 123-4567\nMessage: \"Hi, my kitchen sink is completely backed up and won't drain. Are you available to come by this afternoon for an estimate?\"\nReply to this email to message the customer back.\n[ Reply to Customer ] (Button)"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Jane Smith",
+  "customer_number": "(555) 123-4567",
+  "customer_address": null,
+  "service_requested": "Clogged Drain",
+  "provider": "Google LSA"
+}
+```
+
+**Note**: This example shows a message sent via Google's alias system. The LLM successfully extracts customer name, phone number, and service type. While a ZIP code is provided, it's not a full address, so the address field remains null.
 
 ---
 
@@ -353,6 +487,27 @@ The Yelp Team
 P.S. Respond within 24 hours to improve your response rate!
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Message from a Potential Customer on Yelp",
+  "text": "Yelp for Business\n\nHi [Your Business Name],\n\nYou've received a new message from John D. in San Francisco, CA:\n\nMessage: \"Hi, I need a quote for fixing a leaky faucet in my kitchen. Can you provide availability this week?\"\n\nService Category: Plumbing\n\nTo reply, simply respond to this email (your response will be sent through Yelp). For full details or to continue the conversation, log in to your Yelp Business Inbox: [Link to Dashboard]\n\nThanks,\nThe Yelp Team\n\nP.S. Respond within 24 hours to improve your response rate!"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "John D.",
+  "customer_number": null,
+  "customer_address": "San Francisco, CA",
+  "service_requested": "Plumbing",
+  "provider": "Yelp"
+}
+```
+
+**Note**: The LLM successfully extracts the customer name, location, and service category from the message. The service requested is inferred from both the service category and the message content about fixing a leaky faucet.
+
 #### Example 2: Direct Customer Message
 
 **From**: `[Customer Name] via Yelp <[long-unique-id]@messages.yelp.com>`  
@@ -365,6 +520,27 @@ You have a new message on Yelp
 How to respond: You can reply directly to this email to send your response to the customer. Your reply will be sent via Yelp's messaging system.
 [ View Message on Yelp ] (Button)
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New message from [Customer Name]",
+  "text": "You have a new message on Yelp\n[Customer Name] says: \"Hi there! Do you offer emergency plumbing services on Sundays? My sink just burst.\"\nHow to respond: You can reply directly to this email to send your response to the customer. Your reply will be sent via Yelp's messaging system.\n[ View Message on Yelp ] (Button)"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": "Emergency Plumbing",
+  "provider": "Yelp"
+}
+```
+
+**Note**: This example shows a template format with a placeholder for customer name. The LLM extracts the service type from the message content (emergency plumbing services) and identifies the provider, but customer details are not available in the email body.
 
 #### Example 3: Generic Message Format
 
@@ -391,6 +567,27 @@ You can reply directly through your Yelp for Business inbox or by clicking the b
 Thanks,
 Yelp for Business
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Message from a Yelp Customer",
+  "text": "Hello [Business Name],\n\nYou have a new message from a Yelp user interested in your services.\n\n💬 Message from: [Yelp User Display Name]\n📍 User Location: [City, State] (if available)\n🕒 Sent: [Date & Time]\n\nMessage:\n\"Hi, I'm interested in your [service/product]. Can you tell me your rates and availability this week?\"\n\nYou can reply directly through your Yelp for Business inbox or by clicking the button below.\n\n[Reply to Message]\n\nThanks,\nYelp for Business"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Yelp"
+}
+```
+
+**Note**: This example shows a template format with placeholders for all fields. The LLM can only identify the provider since all other information contains template placeholders rather than actual data.
 
 ---
 
@@ -421,6 +618,27 @@ This lead is part of Nearby Jobs—respond quickly to connect!
 Yelp Support
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Quote Request for Home Cleaning on Yelp",
+  "text": "Yelp for Business\n\n[Your Business Name],\n\nA Yelp user is requesting a quote for Home Cleaning in 90210.\n\nCustomer Details:\n- Name: Anonymous\n- Job Description: \"Looking for a deep clean of a 2-bedroom apartment before moving out. Budget around $200.\"\n- Preferred Contact: Message or Call (via masked number)\n\nView full details and respond in your Yelp dashboard: [Link to Lead in Inbox]\n\nThis lead is part of Nearby Jobs—respond quickly to connect!\n\nYelp Support"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": "90210",
+  "service_requested": "Home Cleaning",
+  "provider": "Yelp"
+}
+```
+
+**Note**: The customer name is listed as "Anonymous", so it's extracted as null. The service type and ZIP code are successfully extracted from the email content.
+
 #### Example 2: Detailed Quote Request
 
 **From**: `Yelp no-reply@yelp.com`  
@@ -436,6 +654,27 @@ Customer's Note: "Hi, I need the trim and front door of my house painted before 
 [ Reply to [Customer Name] ] (Button)
 Note: Reply within 24 hours to keep your response time high!
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "[Business Name] - New quote request from Sarah Williams",
+  "text": "[Customer Name] sent you a quote request\nProject: Exterior House Painting\nTimeline: Within a week\nLocation: San Francisco, CA 94103\nCustomer's Note: \"Hi, I need the trim and front door of my house painted before an event next Friday. It's a two-story victorian. Can you provide an estimate?\"\n[ Reply to [Customer Name] ] (Button)\nNote: Reply within 24 hours to keep your response time high!"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Sarah Williams",
+  "customer_number": null,
+  "customer_address": "San Francisco, CA 94103",
+  "service_requested": "Exterior House Painting",
+  "provider": "Yelp"
+}
+```
+
+**Note**: The customer name is extracted from the subject line, and the service type and location are successfully extracted from the email body.
 
 #### Example 3: Quote Request via Form
 
@@ -466,6 +705,27 @@ Thank you,
 Yelp for Business
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "New Quote Request via Yelp",
+  "text": "Hi [Business Name],\n\nA Yelp user submitted a Request a Quote for your services!\n\n📌 Customer: [Yelp User Display Name]\n📅 Submitted: [Date & Time]\n\nQuote Details:\n• Service Needed: [Service Type]\n• Message: \"[Customer's detailed message]\"\n• Additional info: [any custom form fields]\n\nPlease click below to view the full request and reply:\n\n[View Quote in Yelp Business Inbox]\n\nYou can respond right from Yelp or via email reply.\n\nThank you,\nYelp for Business"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Yelp"
+}
+```
+
+**Note**: This example shows a template format with placeholders for all fields. The LLM can only identify the provider since all other information contains template placeholders rather than actual data.
+
 #### Example 4: Nearby Jobs Quote
 
 **From**: `Yelp for Business`  
@@ -490,6 +750,27 @@ Best,
 Yelp Team
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "Someone Has a Job for You on Yelp",
+  "text": "Yelp for Business\n\nHey [Your Business Name],\n\nA potential customer in [City] has posted a job that matches your services: [Brief Description, e.g., \"Need storage unit for furniture during move.\"]\n\nLocation: [Approximate Area]\nTimeline: [e.g., ASAP]\n\nTo see full details, including contact info (masked), and send a quote, log in to your Yelp for Business account: [Link to Nearby Jobs]\n\nUpgrade to Yelp Ads for priority access to more leads like this.\n\nBest,\nYelp Team"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Yelp"
+}
+```
+
+**Note**: This example shows a template format with placeholders. Contact information is masked and only available through the Yelp dashboard, so the LLM can only identify the provider.
+
 ---
 
 ### Call Back Requests
@@ -508,6 +789,27 @@ Service Needed: Kitchen Remodel
 Note: "Looking for a full gut renovation of a small kitchen. Want to discuss budget and timeline over the phone."
 [ Call Now ] (Button - Mobile) | [ View Lead Details ] (Button)
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "[Customer Name] requested a call back",
+  "text": "New lead: [Customer Name] wants to speak with you\nPhone Number: (555) 098-7654\nPreferred Time: Today, between 2:00 PM – 4:00 PM\nService Needed: Kitchen Remodel\nNote: \"Looking for a full gut renovation of a small kitchen. Want to discuss budget and timeline over the phone.\"\n[ Call Now ] (Button - Mobile) | [ View Lead Details ] (Button)"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": "(555) 098-7654",
+  "customer_address": null,
+  "service_requested": "Kitchen Remodel",
+  "provider": "Yelp"
+}
+```
+
+**Note**: The customer name is a placeholder in this template, but the phone number and service type are successfully extracted from the email body.
 
 ---
 
@@ -537,6 +839,27 @@ Keep engaging with your leads quickly to improve conversions!
 Sincerely,  
 Yelp for Business
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "Your Yelp Lead Activity Summary",
+  "text": "Hello [Business Name],\n\nYou received new lead activity today on Yelp:\n\n• 📩 New Message from [User A]\n• 📬 New Quote Request from [User B]\n• 📞 [Optional if Yelp Call Tracking Enabled] New Call Lead\n\nLog in to your Yelp for Business Inbox to view and respond to all records:\n\n[Go to Yelp Inbox]\n\nKeep engaging with your leads quickly to improve conversions!\n\nSincerely,\nYelp for Business"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Yelp"
+}
+```
+
+**Note**: This is a summary email with placeholders for multiple leads. Individual lead details are not available in the email body and must be accessed through the Yelp dashboard, so only the provider can be identified.
 
 ---
 
@@ -577,6 +900,27 @@ Thank you,
 Angi Leads Team
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "You've Got a New Lead on Angi!",
+  "text": "Hello [Business Name],\n\nYou have a new lead from a homeowner looking for your service!\n\nLead Details:\n• Service Requested: [e.g., \"Bathroom Remodel\"]\n• Customer Name: [First Last]\n• Location: [City, State]\n• When: [Submitted Date & Time]\n• Customer Message: \"[Optional customer or project description]\"\n\nContact Information:\nPhone: [Phone Number Provided by Customer]\nEmail: [Email Provided by Customer]\nProject Details: [Additional fields, like \"Budget\" / \"Timeline\"]\n\nPlease log in to Angi for Pros to view full lead details and respond.\n\nLog in now: https://office.angi.com\n\nThank you,\nAngi Leads Team"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": null,
+  "customer_number": null,
+  "customer_address": null,
+  "service_requested": null,
+  "provider": "Angi"
+}
+```
+
+**Note**: This example shows a template format with placeholders for all fields. The LLM can only identify the provider since all other information contains template placeholders rather than actual data.
+
 #### Example 2: Detailed Plumbing Lead
 
 **From**: `newlead@angi.com`  
@@ -603,6 +947,27 @@ Respond quickly to improve your match rate!
 Angi Support: (877) 947-3639
 ```
 
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "You Have a New Plumbing Lead!",
+  "text": "Angi Leads\n\nNew Lead Alert\n\nCustomer Name: John Smith\nPhone Number: 123-123-1234\nAddress: 123 Merry Lane, San Diego, CA 92101\nZIP Code: 92101\n\nJob Category: Plumbing\nJob Description: Need help unclogging a kitchen drain. Available this week?\n\nTo contact this customer or view more details, log in to your Angi Pro app: [Link to Dashboard/App]\n\nRespond quickly to improve your match rate!\n\nAngi Support: (877) 947-3639"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "John Smith",
+  "customer_number": "123-123-1234",
+  "customer_address": "123 Merry Lane, San Diego, CA 92101",
+  "service_requested": "Plumbing",
+  "provider": "Angi"
+}
+```
+
+**Note**: This example demonstrates successful extraction of all available fields including customer name, phone number, address, and service category. The structured format makes extraction straightforward.
+
 #### Example 3: Formatted Lead with Project Details
 
 **From**: `Angi Pro leads@email.angi.com`  
@@ -619,6 +984,27 @@ Project Details: "I have a few loose boards on my backyard deck that need replac
 Action Required: Call or text Michael immediately to introduce yourself. High-ranking pros respond in under 5 minutes!
 [ Contact Customer ] (Button)
 ```
+
+**Normalized Input Sent to LLM**:
+```json
+{
+  "subject": "NEW LEAD: [Customer Name] has a [Service Type] project in [City]!",
+  "text": "A new customer is looking for a pro!\nCustomer: Michael R.\nProject: Deck or Porch Repair\nLocation: Denver, CO 80202\nPhone: (555) 222-3333\nProject Details: \"I have a few loose boards on my backyard deck that need replacing and staining. Looking to get this done before winter.\"\nAction Required: Call or text Michael immediately to introduce yourself. High-ranking pros respond in under 5 minutes!\n[ Contact Customer ] (Button)"
+}
+```
+
+**Extracted Output**:
+```json
+{
+  "customer_name": "Michael R.",
+  "customer_number": "(555) 222-3333",
+  "customer_address": "Denver, CO 80202",
+  "service_requested": "Deck or Porch Repair",
+  "provider": "Angi"
+}
+```
+
+**Note**: This example demonstrates successful extraction of all available fields. Even though the subject line contains placeholders, the LLM extracts all customer information from the email body.
 
 ---
 
